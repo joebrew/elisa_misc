@@ -90,7 +90,7 @@ colombia_sub <- colombia[keep_polys,]
 
 The below map is a static image. 
 
-```{r}
+```{r, fig.height= 6}
 # Plot
 plot(colombia_sub)
 points(df$lon, 
@@ -121,7 +121,7 @@ legend('topright',
 
 The below map is an interactive HTML widget. Zoom in and out, and click on points.
 
-```{r, results = 'show'}
+```{r, results = 'show', fig.height=6}
 # Leaflet plot
 # m <- leaflet(data = colombia_sub)
 m <- leaflet() %>% 
