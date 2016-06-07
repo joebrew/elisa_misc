@@ -1,12 +1,12 @@
 ---
 title: "Map for Elisa"
 author: "Joe Brew"
-date: "May 24, 2016"
+date: "June 7, 2016"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(comment = NA, message = FALSE, echo = FALSE, results = 'hide', fig.height = 3.5, warning = FALSE)
+knitr::opts_chunk$set(comment = NA, message = FALSE, echo = TRUE, results = 'hide', fig.height = 3.5, warning = FALSE)
 ```
 
 ```{r}
@@ -33,7 +33,11 @@ hospital$lon <- -76.0568453
 
 
 # Read data
-df <- read_excel('CODistances33_23_05_2016.xls')
+df <- read_excel('CODistances33_03_06_2016.xls')
+# remove NA first column
+df <- df[,2:ncol(df)]
+# Get rid of the empty last few rows
+df <- df[1:39,]
 
 # Adjust column names
 names(df)[3] <- 'ethnic_group'
@@ -46,6 +50,12 @@ df$color <-
   ifelse(df$ethnic_group == 'other', 'blue', 
          ifelse(df$ethnic_group == 'Embera Katio ' , 'darkred', 'grey'))
 df$color <- adjustcolor(df$color, alpha.f = 0.6)
+
+# Create a 1 2 type for parasite type
+df$parasite_type <- 
+  ifelse(df$PARASITE == 'P vivax', 1,
+         ifelse(df$PARASITE == 'P falciparum', 2,
+                NA))
 
 # Get easier to use column names
 df$lon <- df$NEWLONGITU
@@ -86,15 +96,24 @@ plot(colombia_sub)
 points(df$lon, 
        df$lat, 
        col = df$color,
-       pch = 16, 
+       pch = df$parasite_type, 
        cex = 1)
-# Add lines
-for (i in 1:nrow(df)){
-    sub_df <- df[i,]
-    lines(x = c(sub_df$lon, hospital$lon),
-          y = c(sub_df$lat, hospital$lat),
-          col = sub_df$color)
-}
+# # Add lines
+# for (i in 1:nrow(df)){
+#     sub_df <- df[i,]
+#     lines(x = c(sub_df$lon, hospital$lon),
+#           y = c(sub_df$lat, hospital$lat),
+#           col = sub_df$color)
+# }
+
+# Add legend
+legend('topleft',
+       pch = c(1,2),
+       legend = c('P vivax', 'P falciparum'))
+legend('topright',
+       pch = 1,
+       col = c('darkred', 'blue'),
+       legend = c('Embera Katio', 'Other'))
 
 ```
 
@@ -135,46 +154,50 @@ for (i in 1:nrow(df)){
   results_list[[i]] <- new_data
 }
 results <- do.call('rbind', results_list)
-# Add indigenous lines
-m <- m %>%
-  addPolylines(data = results %>% filter(ethnic_group == 'Embera Katio '), 
-               lng = ~lon, 
-               lat = ~lat, 
-               group = ~group,
-               popup = ~SUBJID,
-               color = 'darkred',
-               opacity = 0.5,
-               fillOpacity = 0.5)
-# Add other lines
-m <- m %>%
-  addPolylines(data = results %>% filter(ethnic_group != 'Embera Katio '), 
-               lng = ~lon, 
-               lat = ~lat, 
-               group = ~group,
-               popup = ~SUBJID,
-               color = 'darkblue',
-               opacity = 0.5,
-               fillOpacity = 0.5)
+## Adds indigenous lines
+# m <- m %>%
+#   addPolylines(data = results %>% filter(ethnic_group == 'Embera Katio '), 
+#                lng = ~lon, 
+#                lat = ~lat, 
+#                group = ~group,
+#                popup = ~SUBJID,
+#                color = 'darkred',
+#                opacity = 0.5,
+#                fillOpacity = 0.5)
+## Add other lines
+# m <- m %>%
+#   addPolylines(data = results %>% filter(ethnic_group != 'Embera Katio '), 
+#                lng = ~lon, 
+#                lat = ~lat, 
+#                group = ~group,
+#                popup = ~SUBJID,
+#                color = 'darkblue',
+#                opacity = 0.5,
+#                fillOpacity = 0.5)
 # Add others
-m <- m %>% addCircleMarkers(data = df %>% filter(ethnic_group != 'Embera Katio '), 
+temp <- df %>% filter(ethnic_group != 'Embera Katio ')
+m <- m %>% addCircleMarkers(data = temp, 
                             lng = ~lon, 
                             lat = ~lat,
-                            radius = 5,
+                            radius = temp$parasite_type * 2,
                             popup = ~SUBJID,
                             color = 'darkblue',
-                            opacity = 0.5,
-                            fillOpacity = 0.5)
+                            # opacity = temp$parasite_type -1,
+                            opacity = 1,
+                            fillOpacity = temp$parasite_type / 2)
 # Add indigenous
-m <- m %>% addCircleMarkers(data = df %>% filter(ethnic_group == 'Embera Katio '), 
+temp <- df %>% filter(ethnic_group == 'Embera Katio ')
+m <- m %>% addCircleMarkers(data = temp, 
                             lng = ~lon, 
                             lat = ~lat,
-                            radius = 5,
+                            radius = temp$parasite_type * 2,
                             popup = ~SUBJID,
                             color = 'darkred',
-                            opacity = 0.5,
-                            fillOpacity = 0.5)
-# Add hospital 
-m <- m %>% 
+                            # opacity = temp$parasite_type -1,
+                            opacity = 1,
+                            fillOpacity = temp$parasite_type / 2)
+# Add hospital
+m <- m %>%
   addCircleMarkers(data = hospital,
                    lng = ~lon,
                    lat = ~lat,
@@ -188,7 +211,4 @@ m <- m %>%
 
 
 m 
-
-
-
 ```

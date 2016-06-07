@@ -21,7 +21,11 @@ hospital$lon <- -76.0568453
 
 
 # Read data
-df <- read_excel('CODistances33_23_05_2016.xls')
+df <- read_excel('CODistances33_03_06_2016.xls')
+# remove NA first column
+df <- df[,2:ncol(df)]
+# Get rid of the empty last few rows
+df <- df[1:39,]
 
 # Adjust column names
 names(df)[3] <- 'ethnic_group'
