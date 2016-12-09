@@ -117,7 +117,7 @@ legend('topright',
 
 ```
 
-# Interactive map
+# Interactive satellite map
 
 The below map is an interactive HTML widget. Zoom in and out, and click on points.
 
@@ -211,4 +211,90 @@ m <- m %>%
 
 
 m 
+```
+
+## Interactive non-satellite map
+
+```{r, results = 'show', fig.height=6}
+# m <- leaflet(data = colombia_sub)
+m <- leaflet() %>% 
+  setView(lng = mean(df$lon),
+          lat = mean(df$lat),
+          zoom = 9)
+# m <- m %>% addProviderTiles('Stamen.Watercolor',
+#                             options = providerTileOptions(opacity = 0.35))
+# m <- m %>% addProviderTiles('MapQuestOpen.Aerial',
+#                             options = providerTileOptions(opacity = 1))
+m <- m %>% addProviderTiles('Esri.WorldStreetMap',
+                            options = providerTileOptions(opacity = 1))
+
+
+#                fillOpacity = 0.5)
+# Add others
+temp <- df %>% filter(ethnic_group != 'Embera Katio ')
+m <- m %>% addCircleMarkers(data = temp, 
+                            lng = ~lon, 
+                            lat = ~lat,
+                            radius = temp$parasite_type * 2,
+                            popup = ~SUBJID,
+                            color = 'darkblue',
+                            # opacity = temp$parasite_type -1,
+                            opacity = 1,
+                            fillOpacity = temp$parasite_type / 2)
+# Add indigenous
+temp <- df %>% filter(ethnic_group == 'Embera Katio ')
+m <- m %>% addCircleMarkers(data = temp, 
+                            lng = ~lon, 
+                            lat = ~lat,
+                            radius = temp$parasite_type * 2,
+                            popup = ~SUBJID,
+                            color = 'darkred',
+                            # opacity = temp$parasite_type -1,
+                            opacity = 1,
+                            fillOpacity = temp$parasite_type / 2)
+# Add hospital
+m <- m %>%
+  addCircleMarkers(data = hospital,
+                   lng = ~lon,
+                   lat = ~lat,
+                   radius = 1,
+                   popup = ~name,
+                   opacity = 0.5,
+                   fillOpacity = 0.5,
+                   color = 'yellow',
+                   weight = 1,
+                   fill = FALSE)
+
+
+m 
+```
+
+# Static satellite map
+
+```{r}
+library(ggmap)
+library(dplyr)
+colombia_fortified <- fortify(colombia_sub, id = ID_2)
+
+gg <- get_map(location = c(min(colombia_fortified$long),
+                           min(colombia_fortified$lat),
+                           max(colombia_fortified$long),
+                           max(colombia_fortified$lat)),
+              maptype = 'satellite')
+ggmap(gg) + 
+  geom_point(data = df %>%
+               rename(Parasitology = parasite_type,
+                      `Ethnic group` = ethnic_group),
+             aes(x = lon,
+                 y = lat,
+                 size = Parasitology,
+                 color = `Ethnic group`),
+             alpha = 0.6) +
+  xlab('Longitude') +
+  ylab('Latitude') +
+  scale_color_manual(name = 'Ethnicity',
+                     values = c('blue', 'darkorange')) +
+  ggtitle('Distribution of study participants',
+          'Ethnicity = shading; Parasitology = radius')
+  
 ```
