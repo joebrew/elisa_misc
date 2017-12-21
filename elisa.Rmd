@@ -276,25 +276,71 @@ library(ggmap)
 library(dplyr)
 colombia_fortified <- fortify(colombia_sub, id = ID_2)
 
-gg <- get_map(location = c(min(colombia_fortified$long),
-                           min(colombia_fortified$lat),
-                           max(colombia_fortified$long),
-                           max(colombia_fortified$lat)),
-              maptype = 'satellite')
+gg <- get_map(location = c(mean(df$NEWLONGITU),
+                           mean(df$NEWLATITUD) - 0.01),
+                # c(min(colombia_fortified$long),
+                #            min(colombia_fortified$lat),
+                #            max(colombia_fortified$long),
+                #            max(colombia_fortified$lat)),
+              maptype = 'satellite',
+              zoom = 11)
+plot_data <- df %>%
+  mutate(`Parasite` = PARASITE) %>%
+  group_by(lon = round(lon, digits = 3),
+           lat = round(lat, digits = 3), lat, Parasite) %>%
+  tally %>%
+  arrange(desc(n)) %>%
+  ungroup %>%
+  mutate(`Number of cases` = n)
 ggmap(gg) + 
-  geom_point(data = df %>%
-               rename(Parasitology = parasite_type,
-                      `Ethnic group` = ethnic_group),
+  geom_point(data = plot_data,
              aes(x = lon,
                  y = lat,
-                 size = Parasitology,
-                 color = `Ethnic group`),
+                 color = Parasite,
+                 # color = `Ethnic group`,
+                 size = `Number of cases`),
              alpha = 0.6) +
   xlab('Longitude') +
   ylab('Latitude') +
-  scale_color_manual(name = 'Ethnicity',
+  scale_color_manual(name = 'Parasite',
                      values = c('blue', 'darkorange')) +
-  ggtitle('Distribution of study participants',
-          'Ethnicity = shading; Parasitology = radius')
-  
+  scale_size_continuous(name = 'Cases',
+                    range = 1:2,
+                    breaks = 1:2) +
+  ggtitle('Distribution of study participants')#,
+          # 'Parasitology = radius') # Ethnicity = shading; 
+```
+
+```{r}
+# Get colombia
+colombia <- raster::getData(name = 'GADM', download = TRUE, level = 2, country = 'COL')
+keep <- over(df_spatial, polygons(colombia))
+keep <- sort(unique(keep))
+province <- colombia[keep,]
+province_fortified <- fortify(province)
+ggplot() +
+  geom_polygon(data = province_fortified,
+               aes(x = long,
+                   y = lat,
+                   group = group),
+               fill = NA,
+               color = 'darkgrey',
+               alpha = 0.6) +
+   geom_point(data = plot_data,
+             aes(x = lon,
+                 y = lat,
+                 color = Parasite,
+                 # color = `Ethnic group`,
+                 size = `Number of cases`),
+             alpha = 0.6) +
+  xlab('Longitude') +
+  ylab('Latitude') +
+  scale_color_manual(name = 'Parasite',
+                     values = c('blue', 'darkorange')) +
+  scale_size_continuous(name = 'Cases',
+                    range = 1:2,
+                    breaks = 1:2) +
+  ggtitle('Distribution of study participants') +
+  ggthemes::theme_map() +
+  theme(legend.position = 'bottom')
 ```
