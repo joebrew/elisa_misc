@@ -344,3 +344,18 @@ ggplot() +
   ggthemes::theme_map() +
   theme(legend.position = 'bottom')
 ```
+
+## Leaflet map
+
+```{r}
+# pal <- colorNumeric(c("red", "green", "blue"), 1:2)
+factpal <- colorFactor(c('red', 'blue'), plot_data$Parasite)
+
+leaflet(data = province) %>%
+  addProviderTiles('OpenTopoMap') %>%
+  addCircles(data = plot_data, lng = plot_data$lon, lat = plot_data$lat,
+             color = ~factpal(Parasite)) %>%
+  addLegend("bottomright", pal = factpal, values = plot_data$Parasite,
+    title = "Malaria parasite species",
+    opacity = 1)
+```
